@@ -242,7 +242,7 @@ code{background:#f2f2f4;padding:1px 5px;border-radius:5px;font-size:12px}
   function renderPricing() {
     call('pricing').then(function (res) {
       if (res.status === 401) { showLogin(); return; }
-      var p = res.data.pricing || {}, f = res.data.features || {};
+      var p = res.data.pricing || {}, f = res.data.features || {}, pp = res.data.paypal || {};
       $('panel').innerHTML = '<h2>定价与功能开关</h2>'
         + '<p class="hint">改动立即生效，无需重新部署前端。金额单位为人民币元。</p>'
         + '<div class="row">'
@@ -252,6 +252,12 @@ code{background:#f2f2f4;padding:1px 5px;border-radius:5px;font-size:12px}
         + '<div><label>打赏上限（元）</label><input id="pMax" type="number" step="1" min="0.01" value="' + p.donation_max_cny + '"></div>'
         + '<div><label>打赏预设（逗号分隔）</label><input id="pPresets" value="' + (p.donation_presets_cny || []).join(',') + '"></div>'
         + '</div>'
+        + '<h3>PayPal 人工收款</h3><div class="row">'
+        + '<div><label>启用 PayPal</label><label style="font-weight:400;color:#1d1d1f"><input type="checkbox" id="ppEnabled" style="width:auto;margin-right:6px"' + (pp.enabled ? ' checked' : '') + '>启用</label></div>'
+        + '<div><label>paypal.me 用户名</label><input id="ppMe" placeholder="例如 myname" value="' + esc(pp.me || '') + '"></div>'
+        + '<div><label>结算币种</label><input id="ppCurrency" value="' + esc(pp.currency || 'USD') + '"></div>'
+        + '<div><label>美元兑人民币汇率（展示用）</label><input id="ppRate" type="number" step="0.01" min="0" value="' + (pp.usd_per_cny || 0.14) + '"></div>'
+        + '</div><p class="hint">前台付款链接形如 paypal.com/paypalme/用户名/美元金额；用户名留空则前台不显示 PayPal。用户付完点「我已付款」，仍需你在订单页核销开通。</p>'
         + '<h3>功能开关</h3><div class="row">'
         + featureSwitch('paywall', '付费墙（关闭后详细解读免费）', f.paywall)
         + featureSwitch('membership', '会员体系', f.membership)
@@ -267,6 +273,12 @@ code{background:#f2f2f4;padding:1px 5px;border-radius:5px;font-size:12px}
             donation_min_cny: Number($('pMin').value),
             donation_max_cny: Number($('pMax').value),
             donation_presets_cny: $('pPresets').value.split(',').map(function (x) { return Number(x.trim()); }).filter(function (x) { return x > 0; })
+          },
+          paypal: {
+            enabled: $('ppEnabled') ? $('ppEnabled').checked : true,
+            me: $('ppMe').value.trim(),
+            currency: $('ppCurrency').value.trim() || 'USD',
+            usd_per_cny: Number($('ppRate').value) || 0
           }
         };
         call('pricing/save', { method: 'POST', body: body }).then(function (r) {

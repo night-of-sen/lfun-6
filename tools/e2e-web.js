@@ -169,6 +169,8 @@ function makeFetch(cookieJar) {
     ok('创建订单并进入收款面板', panelOn);
     ok('收款面板显示订单号', /LF\d{10,}/.test($('#pwPayDialog').textContent));
     ok('收款面板含合规提示', $('#pwPayDialog').textContent.indexOf('仅供娱乐') >= 0);
+    const ppLink = $('#pwPayDialog').querySelector('.pw-paypal a');
+    ok('收款面板含 PayPal 付款链接', !!ppLink && /paypal\.com\/paypalme\//.test(ppLink.href), ppLink ? ppLink.href : '');
     const orderId = win.LFUN.state.order && win.LFUN.state.order.id;
     ok('订单 ID 存在', typeof orderId === 'number' && orderId > 0, orderId);
 

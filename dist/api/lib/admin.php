@@ -295,6 +295,7 @@ function admin_route_pricing_get(): void
     admin_require();
     lfun_ok([
         'pricing' => pricing(),
+        'paypal'  => paypal_manual_cfg(),
         'features' => [
             'paywall' => feature_enabled('paywall'),
             'membership' => feature_enabled('membership'),
@@ -327,7 +328,23 @@ function admin_route_pricing_save(): void
     }
     setting_set('pricing', $next);
     db_audit('admin:' . $admin['username'], 'pricing.save', null, $next);
-    lfun_ok(['pricing' => pricing()]);
+    $pp = lfun_param('paypal', null);
+    if (is_array($pp)) {
+        $cur = paypal_manual_cfg();
+        $nextPp = [
+            'enabled'     => array_key_exists('enabled', $pp) ? (bool) $pp['enabled'] : $cur['enabled'],
+            'me'          => array_key_exists('me', $pp)
+                ? preg_replace('/[^A-Za-z0-9._-]/', '', (string) $pp['me'])
+                : $cur['me'],
+            'currency'    => array_key_exists('currency', $pp)
+                ? (strtoupper((string) preg_replace('/[^A-Za-z]/', '', (string) $pp['currency'])) ?: 'USD')
+                : $cur['currency'],
+            'usd_per_cny' => array_key_exists('usd_per_cny', $pp) ? max(0.0, (float) $pp['usd_per_cny']) : $cur['usd_per_cny'],
+        ];
+        setting_set('paypal_manual', $nextPp);
+        db_audit('admin:' . $admin['username'], 'paypal.save', null, ['enabled' => $nextPp['enabled'], 'currency' => $nextPp['currency'], 'usd_per_cny' => $nextPp['usd_per_cny']]);
+    }
+    lfun_ok(['pricing' => pricing(), 'paypal' => paypal_manual_cfg()]);
 }
 
 function admin_route_features_save(): void

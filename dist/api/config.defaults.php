@@ -33,6 +33,14 @@ return [
             'instructions'  => '扫码付款后，点击下方“我已完成付款”。管理员核对到账后即刻开通。',
             'auto_grant'    => false,           // true = 用户点击“我已付款”即自动开通（不推荐，默认需管理员核验）
             'claim_window_minutes' => 120,
+            // PayPal 人工收款：与微信/支付宝码同一流程（用户付到你的 PayPal → 点“我已付款”→ 你在后台核销）。
+            // 前端展示付款链接 https://www.paypal.com/paypalme/{me}/{金额}，金额 = 订单人民币金额 × usd_per_cny。
+            'paypal' => [
+                'enabled'     => true,
+                'me'          => '',            // paypal.me 用户名，例如 'myname'
+                'currency'    => 'USD',
+                'usd_per_cny' => 0.14,          // 展示用汇率，仅用于生成 PayPal 链接金额
+            ],
         ],
         'wxpay' => [
             'enabled'    => false,

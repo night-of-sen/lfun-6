@@ -35,6 +35,14 @@ return [
             'wx_qr'        => 'media/wxpay-qr.png',
             'alipay_qr'    => 'media/alipay-qr.png',
             'auto_grant'   => false,
+            // PayPal 人工收款：填你的 paypal.me 用户名（https://www.paypal.com/paypalme/ 后面的那段）。
+            // 用户点链接按美元金额付款，然后点“我已完成付款”，你在后台核销。me 留空则不显示 PayPal。
+            'paypal' => [
+                'enabled'     => true,
+                'me'          => '',        // 例如 'myname'
+                'currency'    => 'USD',
+                'usd_per_cny' => 0.14,
+            ],
         ],
     ],
 

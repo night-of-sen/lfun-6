@@ -88,6 +88,27 @@ function feature_enabled(string $name): bool
     return (bool) cfg('features.' . $name, true);
 }
 
+/** PayPal 人工收款配置：配置文件默认值 < 后台覆盖（settings 表的 paypal_manual）。 */
+function paypal_manual_cfg(): array
+{
+    $base = (array) cfg('pay.manual.paypal', []);
+    $over = setting_get('paypal_manual', []);
+    if (!is_array($over)) {
+        $over = [];
+    }
+    $p = array_merge([
+        'enabled'     => true,
+        'me'          => '',
+        'currency'    => 'USD',
+        'usd_per_cny' => 0.14,
+    ], $base, $over);
+    $p['enabled'] = (bool) $p['enabled'];
+    $p['me'] = trim((string) $p['me']);
+    $p['currency'] = strtoupper(trim((string) $p['currency'])) ?: 'USD';
+    $p['usd_per_cny'] = max(0.0, (float) $p['usd_per_cny']);
+    return $p;
+}
+
 /** 对外公开的配置（前端启动时拉取，价格与文案集中下发）。 */
 function public_config(): array
 {
@@ -106,6 +127,7 @@ function public_config(): array
     if (!in_array($defaultChannel, $channels, true)) {
         $defaultChannel = $channels[0] ?? 'manual';
     }
+    $pp = paypal_manual_cfg();
     return [
         'name'     => (string) cfg('app.name', '问时 · 小六壬'),
         'version'  => '2026.09.29-monetization',
@@ -133,6 +155,10 @@ function public_config(): array
                 'alipay_qr'   => (string) ($manual['alipay_qr'] ?? ''),
                 'instructions' => (string) ($manual['instructions'] ?? ''),
                 'auto_grant'  => (bool) ($manual['auto_grant'] ?? false),
+                'paypal'      => [
+                    'enabled'  => $pp['enabled'] && $pp['me'] !== '',
+                    'currency' => $pp['currency'],
+                ],
             ],
         ],
         'compliance' => (array) cfg('compliance', []),

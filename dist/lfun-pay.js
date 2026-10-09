@@ -37,9 +37,10 @@
       confirmNote: '点击「确认支付」将创建订单。付费内容为传统文化娱乐解读，仅供娱乐，不构成任何决策、医疗、法律、财务或安全建议。',
       minorNote: '未成年人请在监护人陪同下使用并完成支付。',
       refundNote: '虚拟内容一经解锁不退款；重复扣款或支付失败全额退款。',
-      payManualTitle: '扫码完成付款',
-      payManualLead: '请使用微信或支付宝扫描下方收款码，金额为 ¥{p}。付款完成后点击「我已完成付款」。',
-      payNoQr: '管理员尚未配置收款码。请联系站长获取付款方式，或稍后再试。',
+      payManualTitle: '完成付款',
+      payManualLead: '请扫码（微信/支付宝）或点击 PayPal 链接完成付款，金额为 ¥{p}（PayPal 按美元结算）。付款完成后点击「我已完成付款」。',
+      payNoQr: '管理员尚未配置收款方式。请联系站长获取付款方式，或稍后再试。',
+      payViaPaypal: '用 PayPal 付款 {c} {a}',
       payInstructions: '付款说明',
       claimedBtn: '我已完成付款',
       claimedOk: '已记录。管理员核对到账后会立即开通。',
@@ -78,7 +79,7 @@
       referralBtn: '我也起一盘',
       purchase: '购买须知',
       purchaseTitle: '购买须知与退款政策',
-      purchaseBody: '1. 本站为传统民俗文化娱乐体验产品，所有解读仅供娱乐，不构成医疗、法律、财务或安全建议，也不保证任何结果发生。\n2. 单次解锁 ¥{p}，解锁后该盘面的详细解读可永久反复查看。\n3. 会员 ¥{m}/月，会员期内所有盘面的详细解读免费，并可使用历史盘例云同步。\n4. 当前采用人工收款：扫码付款后请点击「我已完成付款」，管理员核对到账后即刻开通，通常 {n} 分钟内完成。订单状态可随时在「我的」中查看。\n5. 随喜赞赏为自愿赠与，不附加任何权益，也不解锁额外内容。\n6. 虚拟内容一经解锁不退款；若发生重复扣款或支付失败，请凭订单号联系站长，全额退款。\n7. 未成年人请在监护人陪同下使用并完成支付。',
+      purchaseBody: '1. 本站为传统民俗文化娱乐体验产品，所有解读仅供娱乐，不构成医疗、法律、财务或安全建议，也不保证任何结果发生。\n2. 单次解锁 ¥{p}，解锁后该盘面的详细解读可永久反复查看。\n3. 会员 ¥{m}/月，会员期内所有盘面的详细解读免费，并可使用历史盘例云同步。\n4. 当前采用人工收款：扫码（微信/支付宝）或经 PayPal 链接付款后请点击「我已完成付款」，管理员核对到账后即刻开通，通常 {n} 分钟内完成。订单状态可随时在「我的」中查看。\n5. 随喜赞赏为自愿赠与，不附加任何权益，也不解锁额外内容。\n6. 虚拟内容一经解锁不退款；若发生重复扣款或支付失败，请凭订单号联系站长，全额退款。\n7. 未成年人请在监护人陪同下使用并完成支付。',
       support: '客服联系：{c}',
       statusPending: '待支付',
       statusPaid: '已支付',
@@ -117,9 +118,10 @@
       confirmNote: 'Confirming creates the order. Paid content is a traditional-culture entertainment reading only; it is not advice of any kind.',
       minorNote: 'Minors must use this site and complete payment with a guardian present.',
       refundNote: 'Unlocked virtual content is non-refundable. Duplicate charges or failed payments are refunded in full.',
-      payManualTitle: 'Complete the payment by QR',
-      payManualLead: 'Scan the code below with WeChat or Alipay for ¥{p}. When you have paid, tap "I have paid".',
-      payNoQr: 'No payment QR has been configured yet. Please contact the site owner, or try again later.',
+      payManualTitle: 'Complete the payment',
+      payManualLead: 'Scan the code (WeChat/Alipay) or tap the PayPal link to pay ¥{p} (PayPal is settled in USD). When you have paid, tap "I have paid".',
+      payNoQr: 'No payment method has been configured yet. Please contact the site owner, or try again later.',
+      payViaPaypal: 'Pay with PayPal {c} {a}',
       payInstructions: 'Payment notes',
       claimedBtn: 'I have paid',
       claimedOk: 'Recorded. The owner will confirm it shortly.',
@@ -158,7 +160,7 @@
       referralBtn: 'Cast my own',
       purchase: 'Purchase notes',
       purchaseTitle: 'Purchase notes and refund policy',
-      purchaseBody: '1. This is a traditional-culture entertainment product. Every reading is for entertainment only and is not medical, legal, financial or safety advice.\n2. A one-off unlock costs ¥{p} and stays available for that pan permanently.\n3. Membership is ¥{m}/month: every pan is unlocked while it is active, with history sync.\n4. Payment is collected manually at present: scan the code, then tap "I have paid". The owner confirms and unlocks, usually within {n} minutes. Order status is always available under "My readings".\n5. Tips are voluntary gifts. They unlock nothing.\n6. Unlocked virtual content is non-refundable. Duplicate charges or failed payments are refunded in full — contact the owner with your order number.\n7. Minors must be accompanied by a guardian.',
+      purchaseBody: '1. This is a traditional-culture entertainment product. Every reading is for entertainment only and is not medical, legal, financial or safety advice.\n2. A one-off unlock costs ¥{p} and stays available for that pan permanently.\n3. Membership is ¥{m}/month: every pan is unlocked while it is active, with history sync.\n4. Payment is collected manually at present: scan the code (WeChat/Alipay) or pay via the PayPal link, then tap "I have paid". The owner confirms and unlocks, usually within {n} minutes. Order status is always available under "My readings".\n5. Tips are voluntary gifts. They unlock nothing.\n6. Unlocked virtual content is non-refundable. Duplicate charges or failed payments are refunded in full — contact the owner with your order number.\n7. Minors must be accompanied by a guardian.',
       support: 'Support: {c}',
       statusPending: 'Pending',
       statusPaid: 'Paid',
@@ -515,6 +517,11 @@
     }
     if (pay.alipay_qr) {
       qr += '<figure><img src="' + esc(pay.alipay_qr) + '" alt="Alipay QR"><figcaption>' + esc(LANG === 'en' ? 'Alipay' : '支付宝') + '</figcaption></figure>';
+    }
+    if (pay.paypal && pay.paypal.enabled && pay.paypal.pay_url) {
+      qr += '<figure class="pw-paypal"><a href="' + esc(pay.paypal.pay_url) + '" target="_blank" rel="noopener">'
+        + '<span class="pw-paypal-btn">PayPal</span>'
+        + '<figcaption>' + esc(t('payViaPaypal', { c: pay.paypal.currency, a: pay.paypal.amount })) + '</figcaption></a></figure>';
     }
     if (pay.code_url) {
       qr += '<figure><img src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=' + encodeURIComponent(pay.code_url) + '" alt="QR"><figcaption>' + esc(pay.type === 'wxpay_native' ? 'WeChat' : 'Alipay') + '</figcaption></figure>';

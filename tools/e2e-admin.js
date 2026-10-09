@@ -85,13 +85,18 @@ async function waitFor(fn, t) { const e = Date.now() + t; while (Date.now() < e)
     // 定价
     d.querySelector('#tabs [data-tab="pricing"]').click();
     ok('定价面板打开', await waitFor(() => $('#pSingle'), 10000));
+    ok('定价面板含 PayPal 配置区', !!($('#ppMe') && $('#ppRate')), '');
     $('#pSingle').value = '11.5';
+    $('#ppMe').value = 'test-paypal-me';
+    $('#ppRate').value = '0.15';
     $('#savePricing').click();
     const priced = await waitFor(() => $('#msg').textContent.indexOf('已保存') >= 0, 12000);
     ok('改价保存成功', priced, $('#msg').textContent);
     const cfg = await (await fetch(API + '/config')).json();
     ok('新价格已生效', cfg.config.pricing.single_unlock_cny === 11.5, cfg.config.pricing.single_unlock_cny);
-    await fetch(API + '/admin/pricing/save', { method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: jar.join('; ') }, body: JSON.stringify({ pricing: { single_unlock_cny: 9.9 } }) });
+    const ppCfg = await (await fetch(API + '/admin/pricing', { headers: { Cookie: jar.join('; ') } })).json();
+    ok('PayPal 配置已保存', ppCfg.paypal && ppCfg.paypal.me === 'test-paypal-me' && ppCfg.paypal.usd_per_cny === 0.15, ppCfg.paypal);
+    await fetch(API + '/admin/pricing/save', { method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: jar.join('; ') }, body: JSON.stringify({ pricing: { single_unlock_cny: 9.9 }, paypal: { me: '', usd_per_cny: 0.14 } }) });
 
     // 文案覆盖
     d.querySelector('#tabs [data-tab="interp"]').click();

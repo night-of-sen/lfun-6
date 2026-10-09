@@ -99,6 +99,12 @@ function uuid() {
   ok('金额由服务端核定 990 分', orderRes.json.order.amount_cents === 990, orderRes.json.order);
   ok('人工收款返回收款参数', orderRes.json.pay.channel === 'manual', orderRes.json.pay);
   ok('下单带合规提示', !!(orderRes.json.notice && orderRes.json.notice.pay && orderRes.json.notice.minor), orderRes.json.notice);
+  // PayPal 人工收款：需在 config.local.php 配好 pay.manual.paypal.me
+  const ppBlock = orderRes.json.pay.params && orderRes.json.pay.params.paypal;
+  ok('PayPal 块存在', !!ppBlock, orderRes.json.pay.params);
+  ok('PayPal 已启用', ppBlock && ppBlock.enabled === true, ppBlock);
+  ok('PayPal 链接格式正确', ppBlock && /^https:\/\/www\.paypal\.com\/paypalme\/[^/]+\/\d+\.\d{2}$/.test(ppBlock.pay_url || ''), ppBlock);
+  ok('PayPal 金额为美元两位小数', ppBlock && /^\d+\.\d{2}$/.test(ppBlock.amount || '') && ppBlock.currency === 'USD', ppBlock);
 
   // 前端传金额不生效
   const orderRes2 = await api('orders', { method: 'POST', token: tokA, device: devA, body: { type: 'single_unlock', pan_key: panKey, amount_cents: 1 } });
