@@ -1,0 +1,6 @@
+.result-wheel{position:relative;width:210px;height:210px;margin:2px auto 22px;border:1px solid var(--gold);border-radius:50%;background:radial-gradient(circle,#fffdf8 0 22%,transparent 23%),repeating-conic-gradient(rgba(180,138,69,.22) 0 1deg,transparent 1deg 60deg);box-shadow:inset 0 0 0 6px #f3ead8}
+.result-wheel-ring{position:absolute;inset:0;animation:turn 45s linear infinite}
+.result-wheel span{--a:calc(var(--i)*60deg);position:absolute;left:50%;top:50%;width:50px;text-align:center;font:15px "STSong","SimSun",serif;transform:translate(-50%,-50%) rotate(var(--a)) translateY(-78px) rotate(calc(var(--a)*-1))}
+.result-wheel span.active{color:var(--red);font-weight:700}
+.result-wheel>b{position:absolute;inset:35%;display:grid;place-items:center;border-radius:50%;background:var(--red);color:white;font:18px "STSong","SimSun",serif;z-index:2}
+@media(prefers-reduced-motion:reduce){.result-wheel-ring{animation:none}}

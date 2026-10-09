@@ -1,0 +1,5 @@
+# 管理后台目录：禁止目录浏览，禁止访问私有文件
+Options -Indexes
+<FilesMatch "\.(sqlite|db|log|pem|key|bak)$">
+  Require all denied
+</FilesMatch>

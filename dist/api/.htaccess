@@ -1,0 +1,15 @@
+# /api 前端控制器重写：所有 /api/* 请求交给 index.php
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /api/
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+
+# 禁止直接访问数据目录与私有配置
+<FilesMatch "\.(sqlite|sqlite3|db|log|pem|key)$">
+  Require all denied
+</FilesMatch>
+
+Options -Indexes

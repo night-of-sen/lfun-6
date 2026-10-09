@@ -1,0 +1,92 @@
+<?php
+/**
+ * 站点私有配置。复制本文件为 config.local.php 后填写，然后用 install.php 初始化数据库。
+ * config.local.php 不会被提交到 git。
+ */
+return [
+    'app' => [
+        'env'   => 'production',
+        'debug' => false,
+        'install_token' => '请改成一段只有你知道的随机字符串',
+    ],
+
+    // 方式一：Hostinger 的 MySQL（推荐，M2 云同步需要）
+    // 'db' => [
+    //     'driver' => 'mysql',
+    //     'host'   => 'localhost',
+    //     'port'   => 3306,
+    //     'name'   => 'u123456789_lfun',
+    //     'user'   => 'u123456789_lfun',
+    //     'pass'   => '在这里填写数据库密码',
+    //     'charset'=> 'utf8mb4',
+    // ],
+
+    // 方式二：SQLite（无需数据库，适合先跑通；数据文件放在 api/storage/）
+    'db' => [
+        'driver' => 'sqlite',
+        'path'   => __DIR__ . '/storage/lfun.sqlite',
+    ],
+
+    // 人工收款（默认渠道）。把收款码图片放到 dist/media/ 下再填写路径。
+    'pay' => [
+        'default_channel' => 'manual',
+        'manual' => [
+            'enabled'      => true,
+            'wx_qr'        => 'media/wxpay-qr.png',
+            'alipay_qr'    => 'media/alipay-qr.png',
+            'auto_grant'   => false,
+        ],
+    ],
+
+    // 定价（元）。改完立即生效，无需重新部署前端。
+    'pricing' => [
+        'single_unlock_cny'    => 9.9,
+        'member_monthly_cny'   => 29,
+        'donation_presets_cny' => [2, 5, 10],
+        'donation_min_cny'     => 1,
+        'donation_max_cny'     => 200,
+    ],
+
+    // 管理员账号（用于 /api/admin 后台）。首次运行 install.php 时创建。
+    'admin' => [
+        'username' => 'admin',
+        'password' => '请改成强密码',
+    ],
+
+    // 客服联系方式：会显示在「购买须知」和「已付款等待核销」的页面上。
+    'support' => [
+        'contact' => '微信 your-wechat-id',
+        'manual_wait_minutes' => 30,
+    ],
+
+    /**
+     * 站长通知（强烈建议开启）。
+     *
+     * 人工收款时，用户点「我已付款」之后如果你不知道，订单就会一直挂着。
+     * 打开这里，用户一点「我已付款」，你的手机立刻收到推送。
+     *
+     * 常用三种（任选其一，把 type 与 url 换成你的）：
+     *
+     *   企业微信群机器人：
+     *     'type' => 'wecom',
+     *     'url'  => 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxxxxxx',
+     *
+     *   钉钉自定义机器人（若开了加签，再填 secret）：
+     *     'type'   => 'dingtalk',
+     *     'url'    => 'https://oapi.dingtalk.com/robot/send?access_token=xxxxxxxx',
+     *     'secret' => 'SECxxxxxxxx',
+     *
+     *   飞书自定义机器人：
+     *     'type' => 'feishu',
+     *     'url'  => 'https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx',
+     *
+     * 配好后可在后台「分享回流 / 运维」里点「发送测试通知」验证。
+     */
+    'notify' => [
+        'enabled' => false,
+        'type'    => 'generic',
+        'url'     => '',
+        'secret'  => '',
+        'on'      => ['claim' => true, 'paid' => false, 'donation' => true],
+    ],
+];
