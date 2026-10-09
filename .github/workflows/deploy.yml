@@ -1,0 +1,38 @@
+# 自动部署到 Hostinger：main 分支每次推送后，把 dist/ 同步到网站根目录。
+#
+# 需要在仓库 Settings → Secrets and variables → Actions 里配置：
+#   FTP_HOST      Hostinger 的 FTP 主机（hPanel → 托管 → FTP 账户里查看）
+#   FTP_USERNAME  FTP 用户名
+#   FTP_PASSWORD  FTP 密码
+#   FTP_DIR       网站根目录在 FTP 上的路径，例如 /public_html（lfun.cloud 主站）
+#                 或 /domains/xxx/public_html（附加域/子域名）
+#
+# 注意：
+# 1. dist/api/config.local.php 不在仓库里（已 gitignore），首次部署后需手动创建
+#    一次（见 docs/部署指南-Hostinger.md），之后部署不会覆盖它。
+# 2. dist/api/storage/** 不会被同步，服务器上的数据库与限流数据不受影响。
+# 3. 首次部署后记得访问 /api/install.php 初始化，然后删除 install.php。
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: FTP deploy dist/
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: ${{ secrets.FTP_DIR }}
+          exclude: |
+            **/storage/**
+            **/.DS_Store

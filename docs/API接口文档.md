@@ -35,7 +35,8 @@
                "donation_presets": [2,5,10], "donation_min": 1, "donation_max": 200 },
   "features": { "paywall": true, "membership": true, "cloud_sync": true, "donation": true, "referral": true },
   "pay": { "default_channel": "manual", "channels": ["manual"],
-           "manual": { "wx_qr": "media/wxpay-qr.png", "instructions": "…", "auto_grant": false } },
+           "manual": { "wx_qr": "media/wxpay-qr.png", "instructions": "…", "auto_grant": false,
+                       "paypal": { "enabled": true, "currency": "USD" } } },
   "compliance": { "footer_notice": "…", "pay_notice": "…", "minor_notice": "…", "refund_notice": "…" },
   "support": { "contact": "微信 xxx", "manual_wait_minutes": 30 } } }
 ```
@@ -117,7 +118,10 @@
 → `{ order:{id,amount_cents,amount_cny,status,out_trade_no,expires_at}, pay:{channel,params}, notice:{pay,minor,refund} }`
 
 `pay.params` 按渠道不同：
-- `manual`：`{ wx_qr, alipay_qr, instructions, amount_cny, out_trade_no }`
+- `manual`：`{ wx_qr, alipay_qr, instructions, amount_cny, out_trade_no, paypal }`
+  - `paypal` = `{ enabled, pay_url, amount, currency }`：人工收款的 PayPal 付款链接
+    （`https://www.paypal.com/paypalme/{me}/{美元金额}`，金额 = 订单人民币金额 × 后台汇率）；
+    未配置 paypal.me 用户名时 `enabled=false`，前台不显示。
 - `wxpay`：`{ code_url }`（Native 扫码）
 - `alipay`：`{ code_url }`（当面付）
 
@@ -166,7 +170,7 @@
 | POST | `/api/admin/orders/{id}/confirm` | 确认收款并开通（幂等） |
 | POST | `/api/admin/orders/{id}/refund` | 退款并收回解锁 |
 | POST | `/api/admin/orders/{id}/fail` | 关闭订单 |
-| GET/POST | `/api/admin/pricing` `/pricing/save` | 定价读写（立即生效） |
+| GET/POST | `/api/admin/pricing` `/pricing/save` | 定价读写（立即生效；`pricing/save` 可附带 `paypal:{enabled,me,currency,usd_per_cny}` 一起保存 PayPal 人工收款配置） |
 | POST | `/api/admin/features/save` | 功能开关（付费墙/会员/同步/打赏/分享） |
 | GET/POST | `/api/admin/interpretations` `/save` `/delete` | 组合断语文案覆盖 |
 | GET | `/api/admin/share` | 分享回流 Top |

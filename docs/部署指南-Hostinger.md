@@ -5,7 +5,23 @@
 - 域名 `lfun.cloud` 已解析到 Hostinger（现状即如此，hPanel + hcdn）。
 - 建议在 hPanel 里创建 MySQL 数据库（MySQL Databases），记下
   库名 / 用户名 / 密码 / 主机（通常 `localhost`）。
-- 准备好微信与支付宝**收款码图片**（个人收款码即可），一张各一个。
+- 收款方式三选一（可并存）：
+  - 微信与支付宝**收款码图片**（个人收款码即可），一张各一个；或
+  - **PayPal**：记下你的 paypal.me 用户名（`https://www.paypal.com/paypalme/` 后面的那段）。
+
+## 0b. 部署方式（二选一）
+
+- **方法 A（手动）**：按下面 §1–§4 把 `dist/` 上传到 `public_html`。
+- **方法 B（推荐，GitHub Actions 自动部署）**：
+  1. 在 GitHub 仓库 Settings → Secrets and variables → Actions → New repository secret，
+     添加 `FTP_HOST`（hPanel → 托管 → FTP 账户里查看主机）、`FTP_USERNAME`、
+     `FTP_PASSWORD`、`FTP_DIR`（网站根目录的 FTP 路径，主站一般为 `/public_html`）。
+  2. 以后每次往 `main` 分支推送，Action 会自动把 `dist/` 同步到服务器
+     （也可在 Actions 页点 Run workflow 手动触发）。
+  3. **首次部署后必须手动做一次**（§2–§3）：在服务器上创建
+     `api/config.local.php`（它不在仓库里，Action 永远不会覆盖它）、
+     跑 `api/install.php` 初始化、然后删除 `install.php`。
+     之后的代码更新走推送即可，不用再碰服务器。
 
 ## 1. 上传文件
 
@@ -53,6 +69,9 @@ public_html/
     'wx_qr'     => 'media/wxpay-qr.png',
     'alipay_qr' => 'media/alipay-qr.png',
     'auto_grant'=> false,   // 保持 false：需要人工核销
+    // PayPal 人工收款（二选一或并存）：填 paypal.me 用户名即可启用；
+    // 留空则前台不显示 PayPal。美元金额按 usd_per_cny 汇率展示。
+    'paypal' => ['enabled' => true, 'me' => '你的paypalme用户名', 'currency' => 'USD', 'usd_per_cny' => 0.14],
 ]],
 ```
 
