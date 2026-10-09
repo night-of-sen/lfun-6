@@ -11,7 +11,150 @@ const LFUN_ADMIN_COOKIE = 'lfun_admin';
 function admin_secret(): string
 {
     $s = (string) cfg('app.install_token', '');
-    return $s !== '' ? $s : 'lfun-insecure-secret-change-me';
+    if ($s === '') {
+        // 绝不回退到硬编码常量：否则任何人都能伪造后台会话。缺 token 时后台整体不可用。
+        throw new RuntimeException('app.install_token 未配置，后台会话无法签名');
+    }
+    return $s;
+}
+
+/* ----------------------------- 后台访问闸门 ----------------------------- */
+/*
+ * 三层防护，按建议顺序：
+ *   1) 服务器层：Hostinger hPanel「目录隐私」加 Basic Auth（最稳，PHP 之前就拦掉）
+ *   2) 本层：IP 允许列表 + 强制 HTTPS
+ *   3) 应用层：强随机 install_token 签名的后台 Cookie（SameSite=Strict / HttpOnly）
+ */
+
+/** 判断 IP 是否命中允许列表（支持 IPv4/IPv6 与 CIDR）。空列表 = 不限制。 */
+function admin_ip_in_allowlist(string $ip, array $list): bool
+{
+    if (!$list) {
+        return true;
+    }
+    $ip = trim($ip);
+    if ($ip === '') {
+        return false;
+    }
+    $bin = @inet_pton($ip);
+    if ($bin === false) {
+        return false;
+    }
+    foreach ($list as $entry) {
+        $entry = trim((string) $entry);
+        if ($entry === '') {
+            continue;
+        }
+        if (strpos($entry, '/') === false) {
+            $one = @inet_pton($entry);
+            if ($one !== false && $one === $bin) {
+                return true;
+            }
+            continue;
+        }
+        $parts = explode('/', $entry, 2);
+        $net = @inet_pton(trim($parts[0]));
+        if ($net === false || strlen($net) !== strlen($bin)) {
+            continue;
+        }
+        $bits = (int) trim($parts[1]);
+        $max = strlen($net) * 8;
+        if ($bits < 0 || $bits > $max) {
+            continue;
+        }
+        $whole = intdiv($bits, 8);
+        $rem = $bits % 8;
+        if ($whole > 0 && substr($bin, 0, $whole) !== substr($net, 0, $whole)) {
+            continue;
+        }
+        if ($rem === 0) {
+            return true;
+        }
+        $mask = (0xFF << (8 - $rem)) & 0xFF;
+        if ((ord($bin[$whole]) & $mask) === (ord($net[$whole]) & $mask)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function admin_is_loopback(string $ip): bool
+{
+    $bin = @inet_pton(trim($ip));
+    if ($bin === false) {
+        return false;
+    }
+    return $bin === inet_pton('127.0.0.1') || $bin === inet_pton('::1');
+}
+
+/**
+ * 客户端 IP。默认只看 REMOTE_ADDR（不可伪造）；
+ * 只有当 admin.trust_proxy = true（前面确实有可信代理/CDN）时才采信转发头。
+ */
+function admin_client_ip(): string
+{
+    if ((bool) cfg('admin.trust_proxy', false)) {
+        return lfun_client_ip();
+    }
+    return (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+}
+
+/** 是否通过 HTTPS 访问。CDN 终止 TLS 时会由 X-Forwarded-Proto 反映出来。 */
+function admin_is_https(): bool
+{
+    if (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off') {
+        return true;
+    }
+    if (strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https') {
+        return true;
+    }
+    return (string) ($_SERVER['SERVER_PORT'] ?? '') === '443';
+}
+
+/** 返回 null 表示放行；否则返回 [错误码, 提示]。 */
+function admin_guard_check(): ?array
+{
+    if ((string) cfg('app.install_token', '') === '') {
+        return ['admin_not_configured', '后台未完成配置：请在 api/config.local.php 设置 app.install_token（用于签名后台会话）。缺失时后台拒绝服务，以免会话被伪造。'];
+    }
+    $ip = admin_client_ip();
+    if ((bool) cfg('admin.require_https', true) && !admin_is_loopback($ip) && !admin_is_https()) {
+        return ['admin_https_required', '后台仅允许通过 HTTPS 访问，请改用 https:// 打开。若本站由 CDN 终止 TLS 仍被拒绝，可把 admin.require_https 设为 false。'];
+    }
+    $list = (array) cfg('admin.ip_allowlist', []);
+    if (!admin_ip_in_allowlist($ip, $list)) {
+        return ['admin_ip_blocked', '当前 IP（' . $ip . '）不在后台允许列表中。若你的公网 IP 变了，请在 api/config.local.php 的 admin.ip_allowlist 里更新。'];
+    }
+    return null;
+}
+
+/** 闸门不通过时直接返回 403（HTML 或 JSON 自适应）并结束请求。 */
+function admin_guard_enforce(): void
+{
+    $deny = admin_guard_check();
+    if ($deny === null) {
+        return;
+    }
+    [$code, $message] = $deny;
+    db_audit('guard', 'admin.' . $code, admin_client_ip());
+    $wantsHtml = strpos((string) ($_SERVER['HTTP_ACCEPT'] ?? ''), 'text/html') !== false;
+    if (!$wantsHtml) {
+        lfun_fail($code, $message, 403);
+    }
+    lfun_flush_buffers();
+    if (!headers_sent()) {
+        http_response_code(403);
+        header('Content-Type: text/html; charset=utf-8');
+    }
+    echo '<!doctype html><html lang="zh-CN"><meta charset="utf-8">'
+        . '<meta name="viewport" content="width=device-width,initial-scale=1"><title>403 · 问时后台</title>'
+        . '<div style="max-width:660px;margin:12vh auto;padding:28px;border:1px solid #e5e5e7;border-radius:20px;'
+        . 'font:15px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;color:#1d1d1f">'
+        . '<h1 style="margin:0 0 12px;font-size:20px">403 · 拒绝访问管理后台</h1>'
+        . '<p style="margin:0;color:#4a4a4f">' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p>'
+        . '<p style="margin:18px 0 0;color:#8a8a8e;font-size:13px">错误码：' . htmlspecialchars($code, ENT_QUOTES, 'UTF-8') . '</p>'
+        . '</div></html>';
+    exit;
 }
 
 function admin_token_issue(int $adminId, int $ttlSeconds = 43200): string
@@ -27,7 +170,12 @@ function admin_token_verify(?string $token): ?array
         return null;
     }
     $parts = explode('.', $token, 2);
-    if (!hash_equals(hash_hmac('sha256', $parts[0], admin_secret()), $parts[1])) {
+    try {
+        $expected = hash_hmac('sha256', $parts[0], admin_secret());
+    } catch (Throwable $e) {
+        return null;   // install_token 未配置：一律视为未登录
+    }
+    if (!hash_equals($expected, $parts[1])) {
         return null;
     }
     $json = base64_decode(strtr($parts[0], '-_', '+/'), true);
@@ -112,6 +260,7 @@ function admin_routes(): array
 
 function admin_dispatch(string $path, string $method): void
 {
+    admin_guard_enforce();
     $sub = trim(substr($path, strlen('admin')), '/');
     foreach (admin_routes() as $pattern => $def) {
         if (preg_match($pattern, $sub, $m)) {
@@ -194,6 +343,12 @@ function admin_route_stats(): void
             'type'    => notify_config()['type'],
             'support' => (string) cfg('support.contact', ''),
             'manual_wait_minutes' => max(1, (int) cfg('support.manual_wait_minutes', 30)),
+        ],
+        'admin_guard' => [
+            'ip_allowlist'  => array_values((array) cfg('admin.ip_allowlist', [])),
+            'require_https' => (bool) cfg('admin.require_https', true),
+            'trust_proxy'   => (bool) cfg('admin.trust_proxy', false),
+            'client_ip'     => admin_client_ip(),
         ],
         'recent_audit' => db_all('SELECT * FROM audit_logs ORDER BY id DESC LIMIT 25'),
     ]);

@@ -210,6 +210,54 @@ lfun-pay.js       同步包住 window.render：渲染完 → trimToFreeLayer() �
 `route_path()` 只用 `REQUEST_URI` + 自身目录算 `/api` 前缀 —— **不要改回去用 `PATH_INFO` / `SCRIPT_NAME`**，
 同目录下还有 `api/admin/index.php`，会把这俩值改掉导致路由被截错（踩过坑）。
 
+### 后台访问限制（三层，至少开一层）
+
+`/api/admin/` 能核销订单、改价、改文案，**上线前必须加限制**。顺序即推荐顺序：
+
+| 层 | 做法 | 特点 |
+| --- | --- | --- |
+| 1 | Hostinger hPanel →「目录隐私」→ 选中 `public_html/api/admin` | 最省事；PHP 之前就拦掉；不可伪造 |
+| 2 | `admin.ip_allowlist` + `admin.require_https` | 仓库自带，可测；支持 CIDR；配错会把自己锁在外面 |
+| 3 | `app.install_token` 签名的后台 Cookie | 已内建；**token 为空时后台直接拒绝服务**（fail closed） |
+
+代码位置：`dist/api/lib/admin.php` 的 `admin_ip_in_allowlist()` / `admin_guard_check()` / `admin_guard_enforce()`；
+闸门在两个入口都挂了：`admin_dispatch()`（JSON 接口）和 `dist/api/admin/index.php`（后台页面本身）。
+
+几条设计约定，改的时候别破坏：
+
+- **`admin_secret()` 永不回退到硬编码常量。** 早先版本在 `install_token` 为空时用了一个固定字符串，等于任何人都能伪造后台会话；现在直接抛错、后台拒服。
+- **默认只看 `REMOTE_ADDR`**，只有 `admin.trust_proxy = true` 才采信 `X-Forwarded-For`。不要为了「让 HTTPS 检查通过」而打开它——那是拿 IP 白名单的可靠性换方便。
+- **`require_https` 默认 true**，但 `127.0.0.1` / `::1` 例外，否则本地和 CI 全被挡住。
+- 白名单**未命中一律 403**，包括 `/api/admin/login`，且会写一条 `audit_logs`（actor=`guard`）。
+- 后台「数据总览」在 `ip_allowlist` 为空时会显示警告横幅，并给出你当前的来访 IP。
+
+验证：`php tests/verify-admin-guard.php`（35 项，含 CIDR 边界、IPv6、v4/v6 混用、fail-closed、XFF 防伪造），
+以及 `tools/e2e-api.js` 里对 `stats.admin_guard` 的断言。
+
+### 后台访问限制（三层，至少开一层）
+
+`/api/admin/` 能核销订单、改价、改文案，**上线前必须加限制**。顺序即推荐顺序：
+
+| 层 | 做法 | 特点 |
+| --- | --- | --- |
+| 1 | Hostinger hPanel →「目录隐私」→ 选中 `public_html/api/admin` | 最省事；PHP 之前就拦掉；不可伪造 |
+| 2 | `admin.ip_allowlist` + `admin.require_https` | 仓库自带，可测；支持 CIDR；配错会把自己锁在外面 |
+| 3 | `app.install_token` 签名的后台 Cookie | 已内建；**token 为空时后台直接拒绝服务**（fail closed） |
+
+代码位置：`dist/api/lib/admin.php` 的 `admin_ip_in_allowlist()` / `admin_guard_check()` / `admin_guard_enforce()`；
+闸门在两个入口都挂了：`admin_dispatch()`（JSON 接口）和 `dist/api/admin/index.php`（后台页面本身）。
+
+几条设计约定，改的时候别破坏：
+
+- **`admin_secret()` 永不回退到硬编码常量。** 早先版本在 `install_token` 为空时用了一个固定字符串，等于任何人都能伪造后台会话；现在直接抛错、后台拒服。
+- **默认只看 `REMOTE_ADDR`**，只有 `admin.trust_proxy = true` 才采信 `X-Forwarded-For`。不要为了「让 HTTPS 检查通过」而打开它——那是拿 IP 白名单的可靠性换方便。
+- **`require_https` 默认 true**，但 `127.0.0.1` / `::1` 例外，否则本地和 CI 全被挡住。
+- 白名单**未命中一律 403**，包括 `/api/admin/login`，且会写一条 `audit_logs`（actor=`guard`）。
+- 后台「数据总览」在 `ip_allowlist` 为空时会显示警告横幅，并给出你当前的来访 IP。
+
+验证：`php tests/verify-admin-guard.php`（35 项，含 CIDR 边界、IPv6、v4/v6 混用、fail-closed、XFF 防伪造），
+以及 `tools/e2e-api.js` 里对 `stats.admin_guard` 的断言。
+
 ---
 
 ## 7. 内容库体系（最容易踩坑的一节）
@@ -276,6 +324,8 @@ powershell -File tools\run-all-tests.ps1          # 一键全量（需要本地�
 | PHP 语法检查 | `dist/api/**/*.php` 共 28 个文件 | 0 错误 |
 | `tests/verify-content.php` | 内容库完整性 + 324 组合无空白 + 禁用词/专业锚点 | 全部通过 |
 | `tests/verify-notify.php` | 6 种通知渠道载荷 + 钉钉加签 + 默认关闭 | 27/27 |
+| `tests/verify-admin-guard.php` | CIDR 匹配 + 后台闸门（HTTPS/白名单/fail-closed/XFF 防伪造） | 35/35 |
+| `tests/verify-admin-guard.php` | CIDR 匹配 + 后台闸门（HTTPS/白名单/fail-closed/XFF 防伪造） | 35/35 |
 | `tools/check-client-leak.js` | 付费文案不在客户端 + 免费层数据仍在 | 22/22 |
 | `tools/e2e-api.js` | 接口：用户/订单/402/403/幂等/会员/同步/打赏/寻物/英文 | 69/69 |
 | `tools/e2e-web.js` | 中文页 jsdom 全流程（起盘→付费墙→下单→核销→解锁→打赏→我的） | 69/69 |
@@ -330,6 +380,8 @@ powershell -File tools\run-all-tests.ps1          # 一键全量（需要本地�
 - [ ] 跑 `api/install.php?token=…` → **立刻删掉 install.php**
 - [ ] 按 `docs/验收清单.md` 真机走查（重点：手机宽度、分享卡片下载、英文站、支付全流程）
 - [ ] 后台点一次「发送测试通知」，确认手机能收到
+- [ ] **开启后台访问限制**（hPanel 目录隐私 或 `admin.ip_allowlist`），并用非白名单 IP 验证返回 403
+- [ ] **开启后台访问限制**（hPanel 目录隐私 或 `admin.ip_allowlist`），并用非白名单 IP 验证返回 403
 
 **P1（上线后一周内）**
 - [ ] 配 Cron：`curl -s -X POST "https://lfun.cloud/api/tasks/reconcile?token=…"`（每 10 分钟）

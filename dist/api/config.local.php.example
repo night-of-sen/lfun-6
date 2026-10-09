@@ -51,6 +51,28 @@ return [
     'admin' => [
         'username' => 'admin',
         'password' => '请改成强密码',
+
+        /**
+         * 后台访问限制（强烈建议至少启用一层）。
+         *
+         * 第 1 层（最稳，推荐）：Hostinger hPanel → 高级 → 「目录隐私 / Directory Privacy」，
+         *                        对目录 /public_html/api/admin 设置用户名密码。
+         *                        PHP 之前就被拦住，和下面两项无关，可以叠加。
+         *
+         * 第 2 层（本段）：IP 白名单 + 强制 HTTPS。
+         */
+        // 只允许这些 IP / CIDR 访问后台。留空 = 不按 IP 限制。
+        // 填你自己的常用公网 IP；后台「数据总览」页会显示你当前的来访 IP，直接复制过来即可。
+        'ip_allowlist'  => [
+            // '203.0.113.7',
+            // '2001:db8::/32',
+        ],
+        // 非 HTTPS 拒绝访问后台（本机 127.0.0.1 例外）。
+        // 如果你的 CDN 终止了 TLS 导致自己也被拒绝，把它改成 false，或把 trust_proxy 打开。
+        'require_https' => true,
+        // 仅当本站前面确实有可信代理/CDN 时才设为 true。
+        // 打开后后台会采信 X-Forwarded-For 判断来访 IP —— 前面没有可信代理时不要开。
+        'trust_proxy'   => false,
     ],
 
     // 客服联系方式：会显示在「购买须知」和「已付款等待核销」的页面上。

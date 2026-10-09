@@ -2,6 +2,14 @@
 /* 管理后台单页。所有数据都来自 /api/admin/* 的 JSON 接口，本文件不直接连数据库。 */
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/lib/bootstrap.php';
+require_once dirname(__DIR__) . '/lib/settings.php';
+require_once dirname(__DIR__) . '/lib/users.php';
+require_once dirname(__DIR__) . '/lib/notify.php';
+require_once dirname(__DIR__) . '/lib/admin.php';
+
+// 后台页面本身也要过访问闸门，不能只拦 JSON 接口。
+admin_guard_enforce();
+
 $appName = (string) cfg('app.name', '问时');
 ?>
 <!doctype html>
@@ -161,16 +169,30 @@ code{background:#f2f2f4;padding:1px 5px;border-radius:5px;font-size:12px}
         return '<div class="stat"><small>' + esc(kv[0]) + '</small><b>' + esc(kv[1]) + '</b></div>';
       }).join('');
       $('funnel').textContent = '漏斗：起盘 ' + s.pans + ' → 下单 ' + (s.orders_pending + s.orders_paid) + ' → 付费 ' + s.orders_paid + ' → 解锁 ' + s.unlocks;
-      renderAlert(s, res.data.notify || {});
+      renderAlert(s, res.data.notify || {}, res.data.admin_guard || {});
       if (onlyAudit) { renderAudit(res.data.recent_audit || []); }
     });
   }
 
-  function renderAlert(s, notify) {
+  function renderAlert(s, notify, guard) {
     var el = $('alert');
     var claimed = Number(s.orders_claimed || 0);
     var extra = '';
     if (notify && notify.support) { extra = ' 客服：' + esc(notify.support) + '。'; }
+    // 待核销优先；没有待核销时，如果后台没做访问限制就提醒一次
+    if (claimed === 0 && guard && Array.isArray(guard.ip_allowlist) && guard.ip_allowlist.length === 0) {
+      el.className = 'alert show warn';
+      el.innerHTML = '<span><b>后台未配置访问限制</b>：目前任何人只要知道密码就能从任意 IP 访问。'
+        + '你当前的来访 IP 是 <code>' + esc(guard.client_ip || '未知') + '</code>，'
+        + '建议写入 <code>api/config.local.php</code> 的 <code>admin.ip_allowlist</code>，'
+        + '或用 Hostinger hPanel 的「目录隐私」给 <code>/api/admin/</code> 加一层 Basic Auth。'
+        + (guard.require_https ? '（已强制 HTTPS' : '（<b>未强制 HTTPS</b>')
+        + (guard.trust_proxy ? '，已采信转发头）' : '，未采信转发头）') + '</span>'
+        + '<button class="primary small" id="alertGuard">知道了</button>';
+      var btn = $('alertGuard');
+      if (btn) { btn.addEventListener('click', function () { el.className = 'alert'; el.innerHTML = ''; }); }
+      return;
+    }
     if (claimed > 0) {
       el.className = 'alert show warn';
       el.innerHTML = '<span>有 <b>' + claimed + '</b> 笔订单用户已点「我已付款」，等待你核销开通。' + extra + '</span>'

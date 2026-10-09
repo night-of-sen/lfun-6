@@ -12,6 +12,9 @@
 | 401 | unauthenticated | 缺少/失效身份 |
 | 402 | payment_required | 未付费（响应含 paywall 信息，**不含解读文本**） |
 | 403 | forbidden | 越权访问他人盘面 |
+| 403 | admin_ip_blocked | 后台访问受限：当前 IP 不在 `admin.ip_allowlist` 内 |
+| 403 | admin_https_required | 后台访问受限：必须用 HTTPS（回环地址例外） |
+| 403 | admin_not_configured | 后台未配置 `app.install_token`，会话无法签名，拒绝服务 |
 | 404 | not_found | 找不到盘面/订单/接口 |
 | 405 | method_not_allowed | 方法不对 |
 | 429 | rate_limited | 触发限流 |
@@ -172,6 +175,9 @@
 | GET | `/api/admin/share` | 分享回流 Top |
 | POST | `/api/admin/sync/run` | 手动执行掉单补偿 |
 | POST | `/api/admin/notify/test` | 发送一条站长通知做自检（未配置 `notify.url` 时返回 400 `not_configured`） |
+
+`GET /api/admin/stats` 还会返回 `admin_guard:{ip_allowlist,require_https,trust_proxy,client_ip}`，
+后台据此在「数据总览」显示「你当前的来访 IP」，方便复制进白名单。
 
 `GET /api/admin/stats` 还会返回 `notify:{enabled,type,support,manual_wait_minutes}`，
 后台据此显示「待核销」红色横幅与通知配置状态。

@@ -77,6 +77,39 @@ public_html/
 
 5. 权限：`api/storage/` 需要对 PHP 可写（755 或 775）。
 
+### 保护管理后台（强烈建议，别跳过）
+
+后台可以核销订单、改价、改文案，暴露在公网风险很高。这里有三层，**至少开一层**：
+
+**第 1 层 · hPanel 目录隐私（最省事，推荐）**
+
+Hostinger hPanel → 高级 → **目录隐私 / Directory Privacy** → 选中 `public_html/api/admin` → 设置用户名密码。
+请求在 PHP 执行之前就被拦住，和下面两项无关，可以叠加使用。
+
+**第 2 层 · IP 白名单 + 强制 HTTPS（本仓库自带）**
+
+```php
+'admin' => [
+    'username' => 'admin',
+    'password' => '换成强密码',
+    'ip_allowlist'  => ['你的常用公网IP'],   // 留空 = 不按 IP 限制（不推荐）
+    'require_https' => true,                 // 非 HTTPS 拒绝访问后台（127.0.0.1 例外，方便本地开发）
+    'trust_proxy'   => false,                // 前面没有可信代理就别开
+],
+```
+
+- 不知道自己公网 IP？先登录一次后台，**「数据总览」页会显示你当前的来访 IP**，复制进 `ip_allowlist` 即可。
+- 支持 CIDR：`['203.0.113.7', '10.0.0.0/8', '2001:db8::/32']`。
+- 白名单未命中时，后台接口与后台页面都返回 **403**（含登录接口）。
+- **配错会把自己锁在外面**。自救：用 FTP / 文件管理器直接编辑 `config.local.php` 把 `ip_allowlist` 清空，不需要进后台。
+- `trust_proxy` 默认 `false`：此时后台只看 `REMOTE_ADDR`，**不采信可伪造的 `X-Forwarded-For`**。
+  如果 hcdn 终止了 TLS 导致你被 HTTPS 检查挡住，请先把 `require_https` 设为 `false`，而不是急着打开 `trust_proxy`。
+
+**第 3 层 · 会话令牌**
+
+后台 Cookie 用 `app.install_token` 做 HMAC 签名（`HttpOnly` + `SameSite=Strict`，12 小时有效）。
+**`install_token` 为空时后台直接拒绝服务**（不会退化成默认密钥），所以这一段务必填成强随机串。
+
 ## 3. 初始化
 
 浏览器访问：

@@ -67,6 +67,25 @@ try {
     $storage = LFUN_API_DIR . '/storage';
     $log[] = 'storage 目录可写：' . (is_dir($storage) && is_writable($storage) ? '是' : '否（请设置 755/775 权限）');
 
+    // ---- 后台安全体检 ----
+    $guardIp = (array) cfg('admin.ip_allowlist', []);
+    if ((string) cfg('app.install_token', '') === '') {
+        $log[] = '⛔ app.install_token 为空：后台会话无法签名，会直接拒绝服务。请务必设置一段随机字符串。';
+    } else {
+        $log[] = '后台签名令牌：已设置。';
+    }
+    if (!$guardIp) {
+        $log[] = '⚠ 后台未配置 IP 白名单（admin.ip_allowlist 为空）：任何人只要知道密码，就能从任意 IP 登录后台。'
+               . '建议填入你的常用公网 IP，或用 Hostinger hPanel「目录隐私」给 /api/admin/ 加一层 Basic Auth。'
+               . '登录后台后，「数据总览」页会显示你当前的来访 IP。';
+    } else {
+        $log[] = '后台 IP 白名单：' . implode('、', array_map('strval', $guardIp));
+    }
+    $log[] = '后台强制 HTTPS：' . (cfg('admin.require_https', true) ? '是' : '否（不建议）')
+           . '；采信转发头：' . (cfg('admin.trust_proxy', false) ? '是（确认前面有可信代理）' : '否');
+
+    $log[] = '⚠ 安装完成后请立刻删除或改名 api/install.php。';
+
     db_audit('install', 'install.run', null, ['driver' => db_driver()]);
 } catch (Throwable $e) {
     $fail = $e->getMessage();

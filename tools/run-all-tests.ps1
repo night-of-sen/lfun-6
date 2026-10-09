@@ -23,6 +23,8 @@ Write-Host '=== 2/4 内容库自检 ===' -ForegroundColor Cyan
 $contentOk = $LASTEXITCODE -eq 0
 & $php @phpArgs (Join-Path $PSScriptRoot '..\tests\verify-notify.php')
 $notifyOk = $LASTEXITCODE -eq 0
+& $php @phpArgs (Join-Path $PSScriptRoot '..\tests\verify-admin-guard.php')
+$guardOk = $LASTEXITCODE -eq 0
 
 Write-Host '=== 2.5/5 客户端付费内容泄漏检查 ===' -ForegroundColor Cyan
 node (Join-Path $PSScriptRoot 'check-client-leak.js') $Base
@@ -41,10 +43,10 @@ node (Join-Path $PSScriptRoot 'e2e-admin.js') "$Base/api/admin/" "$Base/api"
 $adminOk = $LASTEXITCODE -eq 0
 
 Write-Host ''
-if ($bad -eq 0 -and $contentOk -and $notifyOk -and $leakOk -and $apiOk -and $webOk -and $enOk -and $adminOk) {
+if ($bad -eq 0 -and $contentOk -and $notifyOk -and $guardOk -and $leakOk -and $apiOk -and $webOk -and $enOk -and $adminOk) {
     Write-Host '全部测试通过。' -ForegroundColor Green
     exit 0
 } else {
-    Write-Host ("存在失败：lint={0} content={1} leak={2} api={3} web={4} en={5} admin={6}" -f $bad, $contentOk, $leakOk, $apiOk, $webOk, $enOk, $adminOk) -ForegroundColor Red
+    Write-Host ("存在失败：lint={0} content={1} notify={2} guard={3} leak={4} api={5} web={6} en={7} admin={8}" -f $bad, $contentOk, $notifyOk, $guardOk, $leakOk, $apiOk, $webOk, $enOk, $adminOk) -ForegroundColor Red
     exit 1
 }

@@ -55,6 +55,18 @@ return [
         ],
     ],
 
+    // 管理后台访问限制（三层防护，建议至少启用一层；详见 docs/部署指南-Hostinger.md）
+    'admin' => [
+        // 允许访问后台的 IP / CIDR。留空 = 不按 IP 限制。例如：
+        //   ['203.0.113.7', '10.0.0.0/8', '2001:db8::/32']
+        'ip_allowlist'  => [],
+        // 非 HTTPS 一律拒绝访问后台（本机回环地址例外，方便本地开发）
+        'require_https' => true,
+        // 仅当本站前面确实有可信代理/CDN（如 Hostinger hcdn）时才设为 true。
+        // 为 true 时会采信 X-Forwarded-For 作为客户端 IP —— 若前面没有可信代理则等于允许伪造 IP。
+        'trust_proxy'   => false,
+    ],
+
     // PRD §7 定价配置表
     'pricing' => [
         'single_unlock_cny'    => 9.9,

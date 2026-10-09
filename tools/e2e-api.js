@@ -132,6 +132,10 @@ function uuid() {
   const notifyTest = await api('admin/notify/test', { method: 'POST', cookie: adminCookie });
   ok('未配置通知时测试接口明确报错', notifyTest.status === 400 && notifyTest.json.error === 'not_configured', notifyTest.json);
 
+  const guard = statsEarly.json.admin_guard || {};
+  ok('后台暴露访问闸门状态', !!guard.client_ip && Array.isArray(guard.ip_allowlist) && typeof guard.require_https === 'boolean', guard);
+  ok('本机回环地址默认放行（本地开发不受影响）', guard.client_ip === '127.0.0.1', guard.client_ip);
+
   const orderList = await api('admin/orders?status=pending&claimed_only=1', { cookie: adminCookie });
   ok('后台可见待核销订单', orderList.json.orders.some(function (o) { return o.id === orderId; }), orderList.json.orders && orderList.json.orders.length);
 
